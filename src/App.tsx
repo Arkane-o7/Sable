@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import { FlowMode } from './components/FlowMode'
+import FocusMode from './components/FocusMode/FocusMode'
 import { useSableStore } from './store/sableStore'
 
 function App() {
-  const { mode, setScreenSize } = useSableStore()
+  const { mode, setScreenSize, toggleFocusMode } = useSableStore()
 
   useEffect(() => {
     // Initialize screen size
@@ -28,10 +29,22 @@ function App() {
     return () => window.removeEventListener('resize', handleResize)
   }, [setScreenSize])
 
+  // Set up Focus Mode keyboard shortcut listener
+  useEffect(() => {
+    const cleanup = window.electronAPI?.onToggleFocusMode(() => {
+      toggleFocusMode()
+    })
+    
+    return cleanup
+  }, [toggleFocusMode])
+
   return (
     <div className="w-screen h-screen bg-transparent">
+      {/* Flow Mode - only render when in flow mode */}
       {mode === 'flow' && <FlowMode />}
-      {/* Focus Mode will be added later */}
+      
+      {/* Focus Mode - overlays on top when active */}
+      <FocusMode />
     </div>
   )
 }

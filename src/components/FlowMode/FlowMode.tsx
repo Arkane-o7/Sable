@@ -5,7 +5,7 @@ import { ChatPanel } from './ChatPanel'
 import { EdgeHandle } from './EdgeHandle'
 
 export function FlowMode() {
-  const { chatWindows, createChatWindow, setDocked, setScreenSize, isDocked } = useSableStore()
+  const { chatWindows, createChatWindow, setDocked, setScreenSize, isDocked, triggerChatInputFocus } = useSableStore()
 
   // Ensure click-through is enabled when docked (no active windows)
   useEffect(() => {
@@ -31,6 +31,8 @@ export function FlowMode() {
       if (chatWindows.length === 0) {
         createChatWindow()
         setDocked(false)
+        // Trigger focus after a brief delay to allow the window to render
+        setTimeout(() => triggerChatInputFocus(), 100)
       } else {
         // Toggle visibility of all chats
         const allMinimized = chatWindows.every(w => w.isMinimized)
@@ -39,9 +41,13 @@ export function FlowMode() {
           const lastChat = chatWindows[chatWindows.length - 1]
           useSableStore.getState().restoreChatWindow(lastChat.id)
           setDocked(false)
+          // Trigger focus after restoring
+          setTimeout(() => triggerChatInputFocus(), 100)
         } else {
           // Create a new chat window
           createChatWindow()
+          // Trigger focus after creating
+          setTimeout(() => triggerChatInputFocus(), 100)
         }
       }
     })

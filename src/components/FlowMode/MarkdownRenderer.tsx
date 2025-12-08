@@ -10,15 +10,18 @@ import type { Components } from 'react-markdown'
 interface MarkdownRendererProps {
   content: string
   className?: string
+  variant?: 'dark' | 'light'  // dark = white text, light = dark text
 }
 
 // Custom code block with copy button
 function CodeBlock({ 
   language, 
-  children 
+  children,
+  variant = 'dark'
 }: { 
   language: string | undefined
-  children: string 
+  children: string
+  variant?: 'dark' | 'light'
 }) {
   const [copied, setCopied] = useState(false)
 
@@ -28,11 +31,19 @@ function CodeBlock({
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const isDark = variant === 'dark'
+
   return (
     <div className="relative group my-3 rounded-lg overflow-hidden">
       {/* Language label & copy button */}
-      <div className="flex items-center justify-between bg-white/5 px-3 py-1.5 border-b border-white/10">
-        <span className="text-xs text-white/40 font-mono">
+      <div className={cn(
+        "flex items-center justify-between px-3 py-1.5 border-b",
+        isDark ? "bg-white/5 border-white/10" : "bg-neutral-100 border-neutral-200"
+      )}>
+        <span className={cn(
+          "text-xs font-mono",
+          isDark ? "text-white/40" : "text-neutral-500"
+        )}>
           {language || 'code'}
         </span>
         <button
@@ -41,8 +52,10 @@ function CodeBlock({
             'flex items-center gap-1.5 text-xs px-2 py-1 rounded',
             'transition-all duration-200',
             copied 
-              ? 'text-green-400 bg-green-500/10' 
-              : 'text-white/40 hover:text-white/70 hover:bg-white/10'
+              ? 'text-green-500 bg-green-500/10' 
+              : isDark 
+                ? 'text-white/40 hover:text-white/70 hover:bg-white/10'
+                : 'text-neutral-400 hover:text-neutral-600 hover:bg-neutral-200'
           )}
         >
           {copied ? (
@@ -66,7 +79,7 @@ function CodeBlock({
         customStyle={{
           margin: 0,
           padding: '1rem',
-          background: 'rgba(0, 0, 0, 0.3)',
+          background: isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.85)',
           fontSize: '0.8rem',
           lineHeight: 1.5,
         }}
@@ -84,8 +97,24 @@ function CodeBlock({
 
 export const MarkdownRenderer = memo(function MarkdownRenderer({ 
   content, 
-  className 
+  className,
+  variant = 'dark'
 }: MarkdownRendererProps) {
+  const isDark = variant === 'dark'
+  
+  // Color classes based on variant
+  const colors = {
+    heading: isDark ? 'text-white' : 'text-neutral-900',
+    text: isDark ? 'text-white/90' : 'text-neutral-800',
+    textMuted: isDark ? 'text-white/80' : 'text-neutral-600',
+    textSubtle: isDark ? 'text-white/70' : 'text-neutral-500',
+    code: isDark ? 'text-cyan-300 bg-white/10' : 'text-pink-600 bg-neutral-100',
+    link: isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-blue-600 hover:text-blue-500',
+    border: isDark ? 'border-white/10' : 'border-neutral-200',
+    borderAccent: isDark ? 'border-cyan-500/50' : 'border-blue-400',
+    tableBg: isDark ? 'bg-white/5' : 'bg-neutral-50',
+  }
+
   const components: Components = {
     // Code blocks and inline code
     code({ className, children, ...props }) {
@@ -97,12 +126,12 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
       const isCodeBlock = match || codeString.includes('\n')
 
       if (isCodeBlock) {
-        return <CodeBlock language={language}>{codeString}</CodeBlock>
+        return <CodeBlock language={language} variant={variant}>{codeString}</CodeBlock>
       }
 
       return (
         <code
-          className="px-1.5 py-0.5 rounded bg-white/10 text-cyan-300 font-mono text-[0.85em]"
+          className={cn("px-1.5 py-0.5 rounded font-mono text-[0.85em]", colors.code)}
           {...props}
         >
           {children}
@@ -117,29 +146,29 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
 
     // Paragraphs
     p({ children }) {
-      return <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>
+      return <p className={cn("mb-3 last:mb-0 leading-relaxed", colors.text)}>{children}</p>
     },
 
     // Headers
     h1({ children }) {
-      return <h1 className="text-xl font-bold mb-3 mt-4 first:mt-0 text-white">{children}</h1>
+      return <h1 className={cn("text-xl font-bold mb-3 mt-4 first:mt-0", colors.heading)}>{children}</h1>
     },
     h2({ children }) {
-      return <h2 className="text-lg font-bold mb-2 mt-3 first:mt-0 text-white">{children}</h2>
+      return <h2 className={cn("text-lg font-bold mb-2 mt-3 first:mt-0", colors.heading)}>{children}</h2>
     },
     h3({ children }) {
-      return <h3 className="text-base font-semibold mb-2 mt-3 first:mt-0 text-white">{children}</h3>
+      return <h3 className={cn("text-base font-semibold mb-2 mt-3 first:mt-0", colors.heading)}>{children}</h3>
     },
 
     // Lists
     ul({ children }) {
-      return <ul className="list-disc list-inside mb-3 space-y-1 pl-1">{children}</ul>
+      return <ul className={cn("list-disc list-inside mb-3 space-y-1 pl-1", colors.text)}>{children}</ul>
     },
     ol({ children }) {
-      return <ol className="list-decimal list-inside mb-3 space-y-1 pl-1">{children}</ol>
+      return <ol className={cn("list-decimal list-inside mb-3 space-y-1 pl-1", colors.text)}>{children}</ol>
     },
     li({ children }) {
-      return <li className="text-white/90">{children}</li>
+      return <li className={colors.text}>{children}</li>
     },
 
     // Links
@@ -149,7 +178,7 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors"
+          className={cn("underline underline-offset-2 transition-colors", colors.link)}
         >
           {children}
         </a>
@@ -159,7 +188,7 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
     // Blockquotes
     blockquote({ children }) {
       return (
-        <blockquote className="border-l-2 border-cyan-500/50 pl-3 my-3 text-white/70 italic">
+        <blockquote className={cn("border-l-2 pl-3 my-3 italic", colors.borderAccent, colors.textSubtle)}>
           {children}
         </blockquote>
       )
@@ -167,17 +196,17 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
 
     // Horizontal rule
     hr() {
-      return <hr className="my-4 border-white/10" />
+      return <hr className={cn("my-4", colors.border)} />
     },
 
     // Strong/Bold
     strong({ children }) {
-      return <strong className="font-semibold text-white">{children}</strong>
+      return <strong className={cn("font-semibold", colors.heading)}>{children}</strong>
     },
 
     // Emphasis/Italic
     em({ children }) {
-      return <em className="italic text-white/90">{children}</em>
+      return <em className={cn("italic", colors.text)}>{children}</em>
     },
 
     // Tables
@@ -191,23 +220,23 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
       )
     },
     thead({ children }) {
-      return <thead className="bg-white/5">{children}</thead>
+      return <thead className={colors.tableBg}>{children}</thead>
     },
     tbody({ children }) {
-      return <tbody className="divide-y divide-white/10">{children}</tbody>
+      return <tbody className={cn("divide-y", colors.border)}>{children}</tbody>
     },
     tr({ children }) {
-      return <tr className="border-b border-white/10">{children}</tr>
+      return <tr className={cn("border-b", colors.border)}>{children}</tr>
     },
     th({ children }) {
       return (
-        <th className="px-3 py-2 text-left font-semibold text-white/90">
+        <th className={cn("px-3 py-2 text-left font-semibold", colors.text)}>
           {children}
         </th>
       )
     },
     td({ children }) {
-      return <td className="px-3 py-2 text-white/80">{children}</td>
+      return <td className={cn("px-3 py-2", colors.textMuted)}>{children}</td>
     },
   }
 

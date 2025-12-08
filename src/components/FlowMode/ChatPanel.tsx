@@ -115,7 +115,7 @@ export function ChatPanel({ chat }: ChatPanelProps) {
         className={cn(
           'w-full h-full flex flex-col',
           'rounded-2xl overflow-hidden',
-          'bg-black/40 backdrop-blur-xl',
+          'bg-neutral-900/50',
           'border border-white/20',
           'shadow-2xl shadow-black/40',
           isActive && 'ring-1 ring-cyan-500/30'

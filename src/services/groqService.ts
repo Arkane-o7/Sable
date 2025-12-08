@@ -79,3 +79,24 @@ export async function sendMessage(
     throw error
   }
 }
+
+// Parse search request from LLM response
+// The LLM may include [SEARCH: query] in its response to trigger a web search
+export interface SearchRequest {
+  isSearch: boolean
+  query: string | null
+}
+
+export function parseSearchRequest(response: string): SearchRequest {
+  const searchMatch = response.match(/\[SEARCH:\s*(.+?)\]/i)
+  if (searchMatch) {
+    return {
+      isSearch: true,
+      query: searchMatch[1].trim()
+    }
+  }
+  return {
+    isSearch: false,
+    query: null
+  }
+}
