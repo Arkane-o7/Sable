@@ -15,11 +15,15 @@ const app = new Hono().basePath('/api')
 // Global middleware
 app.use('*', logger())
 app.use('*', cors({
-  origin: [
-    'http://localhost:5173', 
-    'http://localhost:3000',
-    /\.vercel\.app$/,  // Allow all Vercel preview URLs
-  ],
+  origin: (origin) => {
+    const allowedOrigins = [
+      'http://localhost:5173', 
+      'http://localhost:3000',
+    ]
+    if (allowedOrigins.includes(origin)) return origin
+    if (origin.endsWith('.vercel.app')) return origin
+    return null
+  },
   credentials: true,
 }))
 
