@@ -1,6 +1,6 @@
 import Groq from 'groq-sdk'
 import { env } from '../lib/env'
-import type { ChatMessage } from '@sable/types'
+import type { ChatMessage } from '../types'
 
 // Initialize Groq client
 const groq = new Groq({

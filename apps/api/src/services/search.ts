@@ -1,5 +1,5 @@
 import { env } from '../lib/env'
-import type { SearchResponse, SearchResult } from '@sable/types'
+import type { SearchResponse, SearchResult } from '../types'
 
 const TAVILY_API_URL = 'https://api.tavily.com/search'
 
