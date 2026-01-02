@@ -5,11 +5,17 @@ node_modules/
 dist/
 dist-electron/
 release/
+.next/
+
+# Turbo cache
+.turbo/
 
 # Environment files
 .env
 .env.local
 .env.*.local
+apps/*/.env
+packages/*/.env
 
 # IDE
 .vscode/

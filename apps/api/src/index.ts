@@ -1,0 +1,68 @@
+// Load environment variables first
+import 'dotenv/config'
+
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { logger } from 'hono/logger'
+import { chatRouter } from './routes/chat'
+import { conversationsRouter } from './routes/conversations'
+import { searchRouter } from './routes/search'
+import { userRouter } from './routes/user'
+
+// Create app
+const app = new Hono().basePath('/api')
+
+// Global middleware
+app.use('*', logger())
+app.use('*', cors({
+  origin: [
+    'http://localhost:5173', 
+    'http://localhost:3000',
+    /\.vercel\.app$/,  // Allow all Vercel preview URLs
+  ],
+  credentials: true,
+}))
+
+// Health check (at /api/health)
+app.get('/health', (c) => {
+  return c.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  })
+})
+
+// Mount routers (now at /api/chat, /api/conversations, etc.)
+app.route('/chat', chatRouter)
+app.route('/conversations', conversationsRouter)
+app.route('/search', searchRouter)
+app.route('/user', userRouter)
+
+// 404 handler
+app.notFound((c) => {
+  return c.json({ error: 'Not found' }, 404)
+})
+
+// Error handler
+app.onError((err, c) => {
+  console.error('Server error:', err)
+  return c.json({ error: 'Internal server error' }, 500)
+})
+
+// Export for Vercel
+export default app
+
+// For local development with Node.js
+if (process.env.NODE_ENV !== 'production') {
+  const port = parseInt(process.env.PORT || '3001')
+  console.log(`🚀 Sable API starting on port ${port}`)
+  
+  import('@hono/node-server').then(({ serve }) => {
+    serve({
+      fetch: app.fetch,
+      port,
+    }, (info) => {
+      console.log(`✅ Server running at http://localhost:${info.port}`)
+    })
+  })
+}
