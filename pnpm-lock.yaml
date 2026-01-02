@@ -29,9 +29,6 @@ importers:
       '@neondatabase/serverless':
         specifier: ^0.10.4
         version: 0.10.4
-      '@sable/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@upstash/ratelimit':
         specifier: ^2.0.5
         version: 2.0.7(@upstash/redis@1.36.0)
