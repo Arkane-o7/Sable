@@ -3,8 +3,8 @@ import { Hono } from 'hono'
 import { handle } from 'hono/vercel'
 import { cors } from 'hono/cors'
 
-// Create app for Vercel
-const app = new Hono()
+// Create minimal app for Vercel to test connectivity
+const app = new Hono().basePath('/api')
 
 // CORS
 app.use('*', cors({
@@ -13,7 +13,7 @@ app.use('*', cors({
 }))
 
 // Health check
-app.get('/api/health', (c) => {
+app.get('/health', (c) => {
   return c.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
@@ -26,15 +26,7 @@ app.get('/', (c) => {
   return c.json({ 
     name: 'Sable API',
     version: '1.0.0',
-    status: 'running'
-  })
-})
-
-app.get('/api', (c) => {
-  return c.json({ 
-    name: 'Sable API',
-    version: '1.0.0',
-    endpoints: ['/api/health']
+    status: 'minimal mode - testing'
   })
 })
 
@@ -42,5 +34,9 @@ app.get('/api', (c) => {
 app.notFound((c) => {
   return c.json({ error: 'Not found', path: c.req.path }, 404)
 })
+
+export const config = {
+  runtime: 'nodejs',
+}
 
 export default handle(app)
