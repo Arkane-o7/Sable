@@ -1,6 +1,7 @@
 // Sable API - Vercel Serverless Functions
 // All API routes in one file for simplicity
 
+/// <reference types="node" />
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Groq from 'groq-sdk'
 
