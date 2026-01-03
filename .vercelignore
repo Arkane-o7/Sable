@@ -1,3 +1,0 @@
-# Ignore Turbo for Vercel deployment
-# We want direct serverless function deployment
-turbo.json
