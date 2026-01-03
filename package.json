@@ -8,7 +8,6 @@
     "dev:desktop": "turbo dev --filter=@sable/desktop",
     "dev:web": "turbo dev --filter=@sable/web",
     "dev:api": "turbo dev --filter=@sable/api",
-    "build": "turbo build",
     "build:packages": "turbo build --filter=./packages/*",
     "build:desktop": "turbo build --filter=@sable/desktop",
     "build:web": "turbo build --filter=@sable/web",
