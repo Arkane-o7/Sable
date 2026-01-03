@@ -1,6 +1,7 @@
 // Sable API - Vercel Serverless Functions
 // All API routes in one file for simplicity
 
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Groq from 'groq-sdk'
 
 // ============================================
@@ -24,7 +25,7 @@ Formatting guidelines:
 // ============================================
 // CORS Headers
 // ============================================
-const corsHeaders = {
+const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -33,7 +34,7 @@ const corsHeaders = {
 // ============================================
 // Route Handler
 // ============================================
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*')
@@ -47,7 +48,7 @@ export default async function handler(req, res) {
     res.setHeader(key, value)
   })
 
-  const url = new URL(req.url, `http://${req.headers.host}`)
+  const url = new URL(req.url || '/', `http://${req.headers.host}`)
   const path = url.pathname
 
   try {
@@ -62,7 +63,7 @@ export default async function handler(req, res) {
 
     // ==================== Chat Endpoint ====================
     if (path === '/api/chat' && req.method === 'POST') {
-      const { messages } = req.body
+      const { messages } = req.body as { messages?: Array<{ role: string; content: string }> }
 
       if (!messages || !Array.isArray(messages)) {
         return res.status(400).json({ error: 'Messages array required' })
@@ -72,7 +73,7 @@ export default async function handler(req, res) {
         model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          ...messages,
+          ...messages.map(m => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content })),
         ],
         temperature: 0.7,
         max_tokens: 4096,
@@ -88,7 +89,7 @@ export default async function handler(req, res) {
 
     // ==================== Streaming Chat ====================
     if (path === '/api/chat/stream' && req.method === 'POST') {
-      const { messages } = req.body
+      const { messages } = req.body as { messages?: Array<{ role: string; content: string }> }
 
       if (!messages || !Array.isArray(messages)) {
         return res.status(400).json({ error: 'Messages array required' })
@@ -103,7 +104,7 @@ export default async function handler(req, res) {
         model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          ...messages,
+          ...messages.map(m => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content })),
         ],
         temperature: 0.7,
         max_tokens: 4096,
@@ -123,7 +124,7 @@ export default async function handler(req, res) {
 
     // ==================== Web Search (Tavily) ====================
     if (path === '/api/search' && req.method === 'POST') {
-      const { query } = req.body
+      const { query } = req.body as { query?: string }
 
       if (!query) {
         return res.status(400).json({ error: 'Query required' })
@@ -149,12 +150,16 @@ export default async function handler(req, res) {
         throw new Error('Search failed')
       }
 
-      const data = await searchResponse.json()
+      const data = await searchResponse.json() as {
+        query: string
+        answer?: string
+        results: Array<{ title: string; url: string; content: string }>
+      }
       
       return res.status(200).json({
         query: data.query,
         answer: data.answer,
-        results: data.results.map(r => ({
+        results: data.results.map((r) => ({
           title: r.title,
           url: r.url,
           content: r.content,
@@ -176,9 +181,10 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('API Error:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message 
+      message 
     })
   }
 }
