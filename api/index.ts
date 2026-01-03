@@ -36,7 +36,7 @@ app.notFound((c) => {
 })
 
 export const config = {
-  runtime: 'nodejs',
+  runtime: 'edge',
 }
 
 export default handle(app)
