@@ -1,14 +1,17 @@
 // Sable API - Vercel Serverless Functions
-// All API routes in one file for simplicity
+// Using CommonJS-style dynamic imports for compatibility
 
-import Groq from 'groq-sdk'
+let groq = null
 
-// ============================================
-// Initialize Services
-// ============================================
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-})
+async function getGroq() {
+  if (!groq) {
+    const Groq = (await import('groq-sdk')).default
+    groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
+    })
+  }
+  return groq
+}
 
 const SYSTEM_PROMPT = `You are Sable, a friendly and helpful AI assistant. You are:
 - Concise and clear in your responses
@@ -68,7 +71,8 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Messages array required' })
       }
 
-      const completion = await groq.chat.completions.create({
+      const groqClient = await getGroq()
+      const completion = await groqClient.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
@@ -99,7 +103,8 @@ export default async function handler(req, res) {
       res.setHeader('Cache-Control', 'no-cache')
       res.setHeader('Connection', 'keep-alive')
 
-      const stream = await groq.chat.completions.create({
+      const groqClient = await getGroq()
+      const stream = await groqClient.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
