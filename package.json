@@ -27,6 +27,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@vercel/node": "^5.5.16",
     "hono": "^4.6.14"
   }
 }
