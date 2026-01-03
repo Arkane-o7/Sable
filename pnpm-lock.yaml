@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      hono:
+        specifier: ^4.6.14
+        version: 4.11.3
     devDependencies:
       rimraf:
         specifier: ^5.0.5
