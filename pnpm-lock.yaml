@@ -11,6 +11,9 @@ importers:
       '@vercel/node':
         specifier: ^5.5.16
         version: 5.5.16(rollup@4.54.0)
+      groq-sdk:
+        specifier: ^0.3.2
+        version: 0.3.3
       hono:
         specifier: ^4.6.14
         version: 4.11.3

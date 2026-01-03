@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@vercel/node": "^5.5.16",
+    "groq-sdk": "^0.3.2",
     "hono": "^4.6.14"
   }
 }
