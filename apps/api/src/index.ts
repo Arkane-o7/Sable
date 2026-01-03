@@ -1,9 +1,5 @@
-// Load environment variables first
-import 'dotenv/config'
-
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { logger } from 'hono/logger'
 import { chatRouter } from './routes/chat'
 import { conversationsRouter } from './routes/conversations'
 import { searchRouter } from './routes/search'
@@ -13,16 +9,16 @@ import { userRouter } from './routes/user'
 const app = new Hono().basePath('/api')
 
 // Global middleware
-app.use('*', logger())
 app.use('*', cors({
   origin: (origin) => {
+    if (!origin) return '*'
     const allowedOrigins = [
       'http://localhost:5173', 
       'http://localhost:3000',
     ]
     if (allowedOrigins.includes(origin)) return origin
     if (origin.endsWith('.vercel.app')) return origin
-    return null
+    return '*'
   },
   credentials: true,
 }))
@@ -56,17 +52,5 @@ app.onError((err, c) => {
 // Export for Vercel
 export default app
 
-// For local development with Node.js
-if (process.env.NODE_ENV !== 'production') {
-  const port = parseInt(process.env.PORT || '3001')
-  console.log(`🚀 Sable API starting on port ${port}`)
-  
-  import('@hono/node-server').then(({ serve }) => {
-    serve({
-      fetch: app.fetch,
-      port,
-    }, (info) => {
-      console.log(`✅ Server running at http://localhost:${info.port}`)
-    })
-  })
-}
+// For local development with Node.js (only runs when executed directly, not imported)
+// Use: pnpm dev in apps/api to start local server

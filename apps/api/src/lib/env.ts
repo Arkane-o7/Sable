@@ -28,15 +28,17 @@ export type Env = z.infer<typeof envSchema>
 
 // Parse and validate environment
 function getEnv(): Env {
+  // In Vercel Edge runtime, process.env is populated from Vercel's environment
   const parsed = envSchema.safeParse(process.env)
   
   if (!parsed.success) {
     console.error('❌ Invalid environment variables:')
-    console.error(parsed.error.flatten().fieldErrors)
+    console.error(JSON.stringify(parsed.error.flatten().fieldErrors))
     
-    // In development, allow running without all vars
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('⚠️ Running in development mode with missing env vars')
+    // In development or when env vars are missing, use defaults
+    const isDev = process.env.NODE_ENV !== 'production'
+    if (isDev) {
+      console.warn('⚠️ Running with missing env vars - using defaults')
       return {
         DATABASE_URL: process.env.DATABASE_URL || 'postgresql://localhost/sable',
         UPSTASH_REDIS_URL: process.env.UPSTASH_REDIS_URL || 'http://localhost:6379',
