@@ -1,8 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
+  "framework": null,
   "buildCommand": "",
-  "installCommand": "pnpm install --filter=. --prod=false",
+  "installCommand": "pnpm install",
   "builds": [
     {
       "src": "api/index.ts",
