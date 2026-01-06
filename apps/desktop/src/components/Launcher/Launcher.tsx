@@ -23,8 +23,14 @@ export function Launcher() {
   const [quickAnswer, setQuickAnswer] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const isOpenRef = useRef(isOpen) // Track isOpen state for async callbacks
   
-  const { createChatWindow, setDocked, triggerChatInputFocus, toggleFocusMode, mode } = useSableStore()
+  // Update ref when isOpen changes
+  useEffect(() => {
+    isOpenRef.current = isOpen
+  }, [isOpen])
+  
+  const { createChatWindow, setDocked, triggerChatInputFocus, toggleFocusMode, mode, addMessage } = useSableStore()
 
   // Default actions when no search query
   const getDefaultActions = useCallback((): SearchResult[] => [
@@ -82,7 +88,8 @@ export function Launcher() {
       ]
       
       const response = await sendMessage(messages)
-      if (response && isOpen) {
+      // Use ref to check if still open (avoids race condition with state)
+      if (response && isOpenRef.current) {
         setQuickAnswer(response.slice(0, 200)) // Limit quick answer length
       }
     } catch (error) {
@@ -91,7 +98,7 @@ export function Launcher() {
     } finally {
       setIsLoadingAI(false)
     }
-  }, [isOpen])
+  }, [])
 
   // Handle search with debounce for AI
   const handleSearch = useCallback((searchQuery: string) => {
@@ -118,9 +125,9 @@ export function Launcher() {
       action: () => {
         const chatId = createChatWindow()
         setDocked(false)
-        // Add the message to the chat
+        // Add the message to the chat using the hook-provided function
         setTimeout(() => {
-          useSableStore.getState().addMessage(chatId, {
+          addMessage(chatId, {
             role: 'user',
             content: searchQuery
           })
@@ -131,7 +138,7 @@ export function Launcher() {
     }
 
     setSearchResults([aiQueryResult, ...filteredActions])
-  }, [createChatWindow, setDocked, triggerChatInputFocus, getDefaultActions])
+  }, [createChatWindow, setDocked, triggerChatInputFocus, addMessage, getDefaultActions])
 
   // Initialize with default actions
   useEffect(() => {
@@ -168,17 +175,24 @@ export function Launcher() {
     }
   }, [])
 
-  // Focus input when opened
+  /**
+   * Focus input when opened and manage click-through behavior.
+   * 
+   * Click-through behavior is essential for transparent Electron overlays:
+   * - When launcher is OPEN: Disable click-through so user can interact with the launcher
+   * - When launcher is CLOSED: Enable click-through so clicks pass through to apps behind
+   * - The `forward: true` option ensures mouse events are still forwarded for hover detection
+   */
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 50)
-      // Disable click-through when launcher is open
+      // Disable click-through when launcher is open so user can interact
       window.electronAPI?.setIgnoreMouseEvents(false)
     } else {
       setQuery('')
       setSelectedIndex(0)
       setQuickAnswer(null)
-      // Re-enable click-through when closed
+      // Re-enable click-through when closed so clicks pass through to apps behind
       window.electronAPI?.setIgnoreMouseEvents(true, { forward: true })
     }
   }, [isOpen])
