@@ -20,6 +20,8 @@ export function LauncherItem({ result, isSelected, onSelect, onHover }: Launcher
         return 'from-amber-500 to-orange-500'
       case 'app':
         return 'from-green-500 to-emerald-600'
+      case 'quick-answer':
+        return 'from-cyan-500 to-teal-600'
       default:
         return 'from-neutral-500 to-neutral-600'
     }

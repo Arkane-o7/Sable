@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, MessageSquare, Sparkles, CornerDownLeft } from 'lucide-react'
+import { Search, MessageSquare, Sparkles, CornerDownLeft, Settings, Moon, Sun, Loader2 } from 'lucide-react'
 import { useSableStore } from '@/store/sableStore'
 import { LauncherItem } from './LauncherItem'
+import { sendMessage, ChatMessage } from '@/services/groqService'
 
 export interface SearchResult {
   id: string
-  type: 'action' | 'chat' | 'command' | 'app'
+  type: 'action' | 'chat' | 'command' | 'app' | 'quick-answer'
   name: string
   description: string
   icon?: React.ReactNode
@@ -18,13 +19,15 @@ export function Launcher() {
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [isLoadingAI, setIsLoadingAI] = useState(false)
+  const [quickAnswer, setQuickAnswer] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   
-  const { createChatWindow, setDocked, triggerChatInputFocus } = useSableStore()
+  const { createChatWindow, setDocked, triggerChatInputFocus, toggleFocusMode, mode } = useSableStore()
 
   // Default actions when no search query
-  const defaultActions: SearchResult[] = [
+  const getDefaultActions = useCallback((): SearchResult[] => [
     {
       id: 'new-chat',
       type: 'chat',
@@ -39,33 +42,67 @@ export function Launcher() {
       }
     },
     {
-      id: 'ask-ai',
+      id: 'toggle-focus',
       type: 'action',
-      name: 'Ask AI',
-      description: 'Quick question to Navi',
-      icon: <Sparkles className="w-5 h-5" />,
+      name: mode === 'flow' ? 'Enter Focus Mode' : 'Exit Focus Mode',
+      description: mode === 'flow' ? 'Switch to Focus Mode for distraction-free work' : 'Return to Flow Mode',
+      icon: mode === 'flow' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />,
       action: () => {
-        if (query.trim()) {
-          // Create a new chat with the query pre-filled
-          createChatWindow()
-          setDocked(false)
-          // The chat will be created, user types in the input
-          setTimeout(() => triggerChatInputFocus(), 100)
-        }
+        toggleFocusMode()
         setIsOpen(false)
       }
     },
-  ]
+    {
+      id: 'settings',
+      type: 'app',
+      name: 'Settings',
+      description: 'Configure Sable preferences',
+      icon: <Settings className="w-5 h-5" />,
+      action: () => {
+        // TODO: Open settings panel
+        setIsOpen(false)
+      }
+    },
+  ], [createChatWindow, setDocked, triggerChatInputFocus, toggleFocusMode, mode])
 
-  // Handle search
+  // Get quick AI answer for the query
+  const getQuickAnswer = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim() || searchQuery.length < 3) {
+      setQuickAnswer(null)
+      return
+    }
+
+    setIsLoadingAI(true)
+    try {
+      const messages: ChatMessage[] = [
+        { 
+          role: 'user', 
+          content: `Answer this very briefly in 1-2 sentences max. If it's a question, give a direct answer. If it's a task request, just acknowledge it: "${searchQuery}"` 
+        }
+      ]
+      
+      const response = await sendMessage(messages)
+      if (response && isOpen) {
+        setQuickAnswer(response.slice(0, 200)) // Limit quick answer length
+      }
+    } catch (error) {
+      console.error('Quick answer error:', error)
+      setQuickAnswer(null)
+    } finally {
+      setIsLoadingAI(false)
+    }
+  }, [isOpen])
+
+  // Handle search with debounce for AI
   const handleSearch = useCallback((searchQuery: string) => {
     if (!searchQuery.trim()) {
-      setSearchResults(defaultActions)
+      setSearchResults(getDefaultActions())
+      setQuickAnswer(null)
       return
     }
 
     // Filter default actions based on query
-    const filteredActions = defaultActions.filter(
+    const filteredActions = getDefaultActions().filter(
       action => 
         action.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         action.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -75,8 +112,8 @@ export function Launcher() {
     const aiQueryResult: SearchResult = {
       id: 'ai-query',
       type: 'command',
-      name: `Ask: "${searchQuery}"`,
-      description: 'Send this question to Navi AI',
+      name: `Ask Navi: "${searchQuery}"`,
+      description: 'Send this to Navi AI for a detailed response',
       icon: <Sparkles className="w-5 h-5" />,
       action: () => {
         const chatId = createChatWindow()
@@ -94,18 +131,29 @@ export function Launcher() {
     }
 
     setSearchResults([aiQueryResult, ...filteredActions])
-  }, [createChatWindow, setDocked, triggerChatInputFocus])
+  }, [createChatWindow, setDocked, triggerChatInputFocus, getDefaultActions])
 
   // Initialize with default actions
   useEffect(() => {
-    setSearchResults(defaultActions)
-  }, [])
+    setSearchResults(getDefaultActions())
+  }, [getDefaultActions])
 
   // Update search results when query changes
   useEffect(() => {
     handleSearch(query)
     setSelectedIndex(0)
   }, [query, handleSearch])
+
+  // Debounced AI quick answer
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (query.trim().length >= 3) {
+        getQuickAnswer(query)
+      }
+    }, 500)
+    
+    return () => clearTimeout(timer)
+  }, [query, getQuickAnswer])
 
   // Listen for launcher toggle (Alt+Space)
   useEffect(() => {
@@ -115,19 +163,8 @@ export function Launcher() {
 
     const cleanup = window.electronAPI?.onToggleLauncher?.(handleToggleLauncher)
     
-    // Also listen for keyboard shortcut locally
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.code === 'Space') {
-        e.preventDefault()
-        handleToggleLauncher()
-      }
-    }
-    
-    window.addEventListener('keydown', handleKeyDown)
-    
     return () => {
       cleanup?.()
-      window.removeEventListener('keydown', handleKeyDown)
     }
   }, [])
 
@@ -140,6 +177,7 @@ export function Launcher() {
     } else {
       setQuery('')
       setSelectedIndex(0)
+      setQuickAnswer(null)
       // Re-enable click-through when closed
       window.electronAPI?.setIgnoreMouseEvents(true, { forward: true })
     }
@@ -217,6 +255,9 @@ export function Launcher() {
                 autoComplete="off"
                 spellCheck={false}
               />
+              {isLoadingAI && (
+                <Loader2 className="w-4 h-4 text-purple-400 animate-spin mr-2" />
+              )}
               {query && (
                 <button
                   onClick={() => setQuery('')}
@@ -226,6 +267,26 @@ export function Launcher() {
                 </button>
               )}
             </div>
+
+            {/* Quick Answer Preview */}
+            <AnimatePresence>
+              {quickAnswer && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="px-5 py-3 border-b border-neutral-800/50 bg-gradient-to-r from-purple-500/10 to-blue-500/10"
+                >
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-purple-300 font-medium mb-1">Quick Answer</p>
+                      <p className="text-neutral-200 text-sm">{quickAnswer}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Search Results */}
             <div className="max-h-[60vh] overflow-y-auto py-2">
