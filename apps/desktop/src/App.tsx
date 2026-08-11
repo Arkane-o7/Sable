@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { FlowMode } from './components/FlowMode'
 import FocusMode from './components/FocusMode/FocusMode'
+import { Launcher } from './components/Launcher'
 import { AuthPage } from './components/Auth'
 import { useSableStore } from './store/sableStore'
 import { useAuth } from './hooks/useAuth'
@@ -80,6 +81,9 @@ function App() {
 
   return (
     <div className="w-screen h-screen bg-transparent">
+      {/* Launcher - Mage-inspired spotlight search */}
+      <Launcher />
+      
       {/* Flow Mode - only render when in flow mode */}
       {mode === 'flow' && <FlowMode />}
       

@@ -48,6 +48,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('toggle-focus-mode', callback)
   },
   
+  // Launcher toggle (Alt+Space)
+  onToggleLauncher: (callback: () => void) => {
+    ipcRenderer.on('toggle-launcher', callback)
+    return () => ipcRenderer.removeListener('toggle-launcher', callback)
+  },
+  
   // Clipboard APIs
   onClipboardChange: (callback: (data: ClipboardData) => void) => {
     const handler = (_: Electron.IpcRendererEvent, data: ClipboardData) => callback(data)
@@ -116,6 +122,8 @@ declare global {
       onToggleChat: (callback: () => void) => () => void
       onMinimizeToDock: (callback: () => void) => () => void
       onToggleFocusMode: (callback: () => void) => () => void
+      // Launcher toggle
+      onToggleLauncher: (callback: () => void) => () => void
       // Clipboard APIs
       onClipboardChange: (callback: (data: { type: 'text' | 'image'; content: string }) => void) => () => void
       clipboardWriteText: (text: string) => void

@@ -26,6 +26,7 @@ declare global {
       onToggleChat: (callback: () => void) => () => void
       onMinimizeToDock: (callback: () => void) => () => void
       onToggleFocusMode: (callback: () => void) => () => void
+      onToggleLauncher: (callback: () => void) => () => void
       
       // Clipboard APIs
       onClipboardChange: (callback: (data: ClipboardData) => void) => () => void

@@ -464,6 +464,26 @@ app.whenReady().then(() => {
     console.log('Warning: Could not register any Focus Mode shortcut')
   }
 
+  // Register Launcher shortcut (Alt+Space - similar to Mage/Raycast)
+  const launcherShortcuts = ['Alt+Space', 'CommandOrControl+Space', 'CommandOrControl+K']
+  let launcherRegistered = false
+  
+  for (const shortcut of launcherShortcuts) {
+    if (!launcherRegistered && globalShortcut.register(shortcut, () => {
+      console.log(`Toggle Launcher triggered via ${shortcut}`)
+      if (mainWindow) {
+        mainWindow.webContents.send('toggle-launcher')
+      }
+    })) {
+      console.log(`Registered Launcher shortcut: ${shortcut}`)
+      launcherRegistered = true
+    }
+  }
+  
+  if (!launcherRegistered) {
+    console.log('Warning: Could not register any Launcher shortcut')
+  }
+
   // Register Escape to minimize to dock
   globalShortcut.register('Escape', () => {
     if (mainWindow) {
